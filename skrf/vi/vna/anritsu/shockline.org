@@ -1,0 +1,19 @@
+* Anritsu ShockLine 
+  #+begin_src python :results none :var filename="shockline.png"
+import pyvisa
+import skrf
+import matplotlib.pyplot as plt
+from skrf.vi.vna.anritsu import shockline
+import importlib
+importlib.reload(skrf)
+importlib.reload(shockline)
+vna=shockline.ShockLine('TCPIP0::anritsu-vna.local::5001::SOCKET')
+snp=vna.ch1.get_snp_network(ports=(1,2,3,4))
+snp.plot_s_smith()
+plt.savefig(filename)
+plt.show()
+  #+end_src
+
+
+
+  

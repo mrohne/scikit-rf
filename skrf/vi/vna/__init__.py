@@ -177,4 +177,4 @@ Here's an example of using a validator:
     _ = instr.ch1.freq_start
 """
 from .vna import VNA, Channel, ValuesFormat # isort: skip
-from . import keysight, nanovna # isort: skip
+from . import keysight, nanovna, anritsu # isort: skip
