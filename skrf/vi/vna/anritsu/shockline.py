@@ -6,7 +6,7 @@ import sys
 import time
 import types
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Callable, Union
+from typing import TYPE_CHECKING, Any, Callable, Union, Iterable, Type, Optional
 
 if TYPE_CHECKING:
     from typing import Sequence
@@ -69,7 +69,7 @@ def _read_ascii_values(
         count = self.read_bytes(int(digit)).decode()
         if not count.isdigit(): raise SCPIError(f'Unexpected header count: {count}')
         block = self.read_bytes(int(count)).decode()
-        empty = self.read()
+        _ = self.read()
     finally:
         self.clear()
     return util.from_ascii_block(block, converter, separator, container)
@@ -273,25 +273,6 @@ class ShockLine(VNA):
             for k, v in config.items():
                 setattr(self, k, v)
 
-        def get_sdata(self, a: int | str, b: int | str) -> skrf.Network:
-            # Get trace
-            param = f'S{a}{b}'
-            tnum = 1+self.traces.index(param)
-            # Acquire data
-            self.sweep_mode = SweepMode.SINGLE
-            while self.sweep_mode == SweepMode.SINGLE: time.sleep(0.1)
-            self.parent.check_errors()
-            # Read data
-            orig_query_fmt = self.parent.query_format
-            self.parent.query_format = ValuesFormat.BINARY_64
-            sdata = self.query_values(f':CALC{self.cnum}:PAR{tnum}:DATA:SDATA?', complex_values=True)
-            self.parent.query_format = orig_query_fmt
-            # Build network
-            ntwk = skrf.Network()
-            ntwk.frequency = self.frequency
-            ntwk.s = sdata
-            return ntwk                
-                    
         def get_sdata(self, a: int | str, b: int | str) -> skrf.Network:
             # Get trace
             param = f'S{a}{b}'
