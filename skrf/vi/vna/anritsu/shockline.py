@@ -1,13 +1,13 @@
 from __future__ import annotations
 
-from enum import Enum
-from typing import TYPE_CHECKING, Any, Callable, Union
-
 import itertools
 import re
 import sys
 import time
 import types
+from enum import Enum
+from typing import TYPE_CHECKING, Any, Callable, Union
+
 if TYPE_CHECKING:
     from typing import Sequence
 
