@@ -12,18 +12,13 @@ import types
 from enum import Enum
 
 import numpy as np
-
 import skrf
 from skrf.vi import vna
-from skrf.vi.validators import (
-    BooleanValidator,
-    DelimitedStrValidator,
-    EnumValidator,
-    FloatValidator,
-    FreqValidator,
-    IntValidator,
-)
+from skrf.vi.validators import (BooleanValidator, DelimitedStrValidator,
+                                EnumValidator, FloatValidator, FreqValidator,
+                                IntValidator)
 from skrf.vi.vna import VNA, ValuesFormat
+
 
 class SCPIError(Exception):
     def __init__(self, description: string) -> None:
@@ -59,7 +54,10 @@ class DataFormat(Enum):
     SINGLE = 'REAL32'
 
 import re
+
 import pyvisa.util as util
+
+
 def _read_ascii_values(
     self,
     converter: util.ASCII_CONVERTER = 'f',
