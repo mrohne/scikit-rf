@@ -1,22 +1,23 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Callable, Union
 
 if TYPE_CHECKING:
     from typing import Sequence
 
 import itertools
+import re
 import sys
 import time
 import types
 from enum import Enum
 
 import numpy as np
+import pyvisa.util as util
 import skrf
 from skrf.vi import vna
-from skrf.vi.validators import (BooleanValidator, DelimitedStrValidator,
-                                EnumValidator, FloatValidator, FreqValidator,
-                                IntValidator)
+from skrf.vi.validators import (BooleanValidator, EnumValidator,
+                                FloatValidator, FreqValidator, IntValidator)
 from skrf.vi.vna import VNA, ValuesFormat
 
 
@@ -52,11 +53,6 @@ class DataFormat(Enum):
     ASCII = 'ASC'
     DOUBLE = 'REAL'
     SINGLE = 'REAL32'
-
-import re
-
-import pyvisa.util as util
-
 
 def _read_ascii_values(
     self,
