@@ -21,7 +21,7 @@ from skrf.vi.vna import VNA, ValuesFormat
 
 
 class SCPIError(Exception):
-    def __init__(self, description: string) -> None:
+    def __init__(self, description: str) -> None:
         super().__init__(
             f'ShockLine error: {description}'
         )
