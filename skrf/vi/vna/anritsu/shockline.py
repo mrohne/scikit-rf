@@ -6,7 +6,8 @@ import sys
 import time
 import types
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Callable, Union, Iterable, Type, Optional
+from typing import (TYPE_CHECKING, Any, Callable, Iterable, Optional, Type,
+                    Union)
 
 if TYPE_CHECKING:
     from typing import Sequence
@@ -18,7 +19,6 @@ from skrf.vi import vna
 from skrf.vi.validators import (BooleanValidator, EnumValidator,
                                 FloatValidator, FreqValidator, IntValidator)
 from skrf.vi.vna import VNA, ValuesFormat
-
 
 class SCPIError(Exception):
     def __init__(self, description: str) -> None:
@@ -78,7 +78,7 @@ def _query_ascii_values(
         self,
         message: str,
         converter: util.ASCII_CONVERTER = "f",
-        separator: Union[str, Callable[[str], Iterable[str]]] = lambda s: re.split(r'\n|,', s),
+        separator: str | Callable[[str], Iterable[str]] = lambda s: re.split(r'\n|,', s),
         container: Union[Type, Callable[[Iterable], Sequence]] = list,
         delay: Optional[float] = None,
 ) -> Sequence[Any]:
@@ -316,8 +316,8 @@ class ShockLine(VNA):
             ntwk = skrf.Network()
             ntwk.frequency = self.frequency
             ntwk.s = np.stack(sdata,axis=1).reshape(-1,len(ports),len(ports))
-            return ntwk                
-        
+            return ntwk
+
     def __init__(self, address: str, backend: str = '@py') -> None:
         super().__init__(address, backend)
 
