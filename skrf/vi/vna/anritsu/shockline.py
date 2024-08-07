@@ -120,6 +120,8 @@ class ShockLine(VNA):
         def __init__(self, parent, cnum: int, cname: str):
             super().__init__(parent, cnum, cname)
 
+            if parent.nchannels < cnum:
+                parent.nchannels = cnum
 
         freq_start = VNA.command(
             get_cmd='SENS<self:cnum>:FREQ:STAR?',
@@ -215,6 +217,9 @@ class ShockLine(VNA):
             validator=IntValidator(),
         )
 
+        def clear_averaging(self) -> None:
+            self.write(f"SENS{self.cnum}:AVER:CLE")
+
         @property
         def traces(self) -> Sequence[str]:
             return [self.query(f':CALC{self.cnum}:PAR{t}:DEF?')
@@ -278,6 +283,29 @@ class ShockLine(VNA):
             self.parent._resource.timeout = config.pop('timeout')
             for k, v in config.items():
                 setattr(self, k, v)
+        @property
+        def active_trace_sdata(self) -> np.ndarray:
+            return self.query_values(
+                f"CALC{self.cnum}:DATA:SDATA?", complex_values=True
+        )
+
+        def get_active_trace(self) -> skrf.Network:
+            # Acquire data
+            self.sweep_mode = SweepMode.SINGLE
+            while self.sweep_mode == SweepMode.SINGLE:
+                time.sleep(0.1)
+            self.parent.check_errors()
+            # Read data
+            orig_query_fmt = self.parent.query_format
+            self.parent.query_format = ValuesFormat.BINARY_64
+            sdata = self.query_values(f':CALC{self.cnum}:DATA:SDATA?', complex_values=True)
+            self.parent.query_format = orig_query_fmt
+            self.parent.check_errors()
+            # Build network
+            ntwk = skrf.Network()
+            ntwk.frequency = self.frequency
+            ntwk.s = sdata
+            return ntwk
 
         def get_sdata(self, a: int | str, b: int | str) -> skrf.Network:
             # Get trace
@@ -384,9 +412,30 @@ class ShockLine(VNA):
             self.write(':FORM:BORD SWAP')
             self.write(':FORM:DATA REAL')
 
+    nports = VNA.command(
+        get_cmd='SYST:PORT:COUN?',
+        doc='''The number of ports.
+        ''',
+        validator=IntValidator(),
+    )
+
+    nchannels = VNA.command(
+        get_cmd=':DISP:COUNT?',
+        set_cmd=':DISP:COUNT <arg>',
+        doc='''The number of channels.
+        ''',
+        validator=IntValidator(),
+    )
+
     @property
-    def nports(self) -> int:
-        return int(self.query('SYST:PORT:COUN?'))
+    def active_channel(self) -> Channel | None:
+        num = int(self.query(':DISP:WIND:ACT?'))
+        return getattr(self, f"ch{num}", None)
+
+    @active_channel.setter
+    def active_channel(self, ch: Channel) -> None:
+        num = ch.cnum
+        self.write(f':DISP:WIND:ACT {num}')
 
     def read_values(self, **kwargs) -> None:  # noqa: B027
         pass
