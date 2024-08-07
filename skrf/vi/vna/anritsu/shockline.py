@@ -6,19 +6,21 @@ import sys
 import time
 import types
 from enum import Enum
-from typing import (TYPE_CHECKING, Any, Callable, Iterable, Optional, Type,
-                    Union)
-
-if TYPE_CHECKING:
-    from typing import Sequence
+from typing import (
+    Any,
+    Callable,
+    Iterable,
+    Sequence,
+)
 
 import numpy as np
 import pyvisa.util as util
+
 import skrf
 from skrf.vi import vna
-from skrf.vi.validators import (BooleanValidator, EnumValidator,
-                                FloatValidator, FreqValidator, IntValidator)
+from skrf.vi.validators import BooleanValidator, EnumValidator, FloatValidator, FreqValidator, IntValidator
 from skrf.vi.vna import VNA, ValuesFormat
+
 
 class SCPIError(Exception):
     def __init__(self, description: str) -> None:
@@ -56,18 +58,21 @@ class DataFormat(Enum):
 def _read_ascii_values(
     self,
     converter: util.ASCII_CONVERTER = 'f',
-    separator: Union[str, Callable[[str], Iterable[str]]] = lambda s: re.split(r'\n|,', s),
-    container: Union[Type, Callable[[Iterable], Sequence]] = list,
+    separator: str | Callable[[str], Iterable[str]] = lambda s: re.split(r'\n|,', s),
+    container: type | Callable[[Iterable], Sequence] = list,
 ) -> Sequence[Any]:
     '''Anritsu-style read_ascii_values
     '''
     try:
         mark = self.read_bytes(1).decode()
-        if mark != r'#': raise SCPIError(f'Unexpected header mark: {mark}')
+        if mark != r'#':
+            raise SCPIError(f'Unexpected header mark: {mark}')
         digit = self.read_bytes(1).decode()
-        if not digit.isdigit(): raise SCPIError(f'Unexpected header digit: {digit}')
+        if not digit.isdigit():
+            raise SCPIError(f'Unexpected header digit: {digit}')
         count = self.read_bytes(int(digit)).decode()
-        if not count.isdigit(): raise SCPIError(f'Unexpected header count: {count}')
+        if not count.isdigit():
+            raise SCPIError(f'Unexpected header count: {count}')
         block = self.read_bytes(int(count)).decode()
         _ = self.read()
     finally:
@@ -79,8 +84,8 @@ def _query_ascii_values(
         message: str,
         converter: util.ASCII_CONVERTER = "f",
         separator: str | Callable[[str], Iterable[str]] = lambda s: re.split(r'\n|,', s),
-        container: Union[Type, Callable[[Iterable], Sequence]] = list,
-        delay: Optional[float] = None,
+        container: type | Callable[[Iterable], Sequence] = list,
+        delay: float | None = None,
 ) -> Sequence[Any]:
     '''Anritsu-style query_ascii_values
     '''
@@ -159,7 +164,7 @@ class ShockLine(VNA):
             doc='''The IF bandwidth [Hz]''',
             validator=FreqValidator(),
         )
-        
+
         sweep_time = VNA.command(
             get_cmd='SENS<self:cnum>:SWE:TIME?',
             set_cmd='SENS<self:cnum>:SWE:TIME <arg>',
@@ -212,7 +217,7 @@ class ShockLine(VNA):
 
         @property
         def traces(self) -> Sequence[str]:
-            return [self.query(f':CALC{self.cnum}:PAR{t}:DEF?') 
+            return [self.query(f':CALC{self.cnum}:PAR{t}:DEF?')
                     for t in range(1,self.ntraces+1)]
 
         @traces.setter
@@ -220,17 +225,17 @@ class ShockLine(VNA):
             self.ntraces = len(trs)
             for t, p in enumerate(trs,start=1):
                 self.write(f':CALC{self.cnum}:PAR{t}:DEF {p}')
-                
+
         @property
         def stores(self) -> Sequence[str]:
-            return [self.query(f':CALC{self.cnum}:PAR{t}:MEM:MML?') 
+            return [self.query(f':CALC{self.cnum}:PAR{t}:MEM:MML?')
                     for t in range(1,self.ntraces+1)]
 
         @stores.setter
         def stores(self, trs: Sequence[str]) -> None:
             for t, p in enumerate(trs,start=1):
                 self.write(f':CALC{self.cnum}:PAR{t}:MEM:MML {p}')
-                
+
         @property
         def freq_step(self) -> int:
             # Not all instruments support SENS:FREQ:STEP
@@ -267,7 +272,8 @@ class ShockLine(VNA):
             }
             self.parent._resource.clear()
             self.sweep_mode = SweepMode.SINGLE
-            while self.sweep_mode == SweepMode.SINGLE: time.sleep(0.1)
+            while self.sweep_mode == SweepMode.SINGLE:
+                time.sleep(0.1)
             self.parent._resource.clear()
             self.parent._resource.timeout = config.pop('timeout')
             for k, v in config.items():
@@ -279,7 +285,8 @@ class ShockLine(VNA):
             tnum = 1+self.traces.index(param)
             # Acquire data
             self.sweep_mode = SweepMode.SINGLE
-            while self.sweep_mode == SweepMode.SINGLE: time.sleep(0.1)
+            while self.sweep_mode == SweepMode.SINGLE:
+                time.sleep(0.1)
             self.parent.check_errors()
             # Read data
             orig_query_fmt = self.parent.query_format
@@ -291,24 +298,27 @@ class ShockLine(VNA):
             ntwk = skrf.Network()
             ntwk.frequency = self.frequency
             ntwk.s = sdata
-            return ntwk                
+            return ntwk
 
         def get_snp_network(
             self,
             ports: Sequence | None = None,
         ) -> skrf.Network:
-            if ports is None: ports = list(range(1, self.parent.nports + 1))
+            if ports is None:
+                ports = list(range(1, self.parent.nports + 1))
             # Set up traces
             orig_traces = self.traces
             self.traces = [f"S{b}{a}" for a, b in itertools.product(ports, repeat=2)]
             # Acquire data
             self.sweep_mode = SweepMode.SINGLE
-            while self.sweep_mode == SweepMode.SINGLE: time.sleep(0.1)
+            while self.sweep_mode == SweepMode.SINGLE:
+                time.sleep(0.1)
             self.parent.check_errors()
             # Read data
             orig_query_fmt = self.parent.query_format
             self.parent.query_format = ValuesFormat.BINARY_64
-            sdata = [self.query_values(f':CALC{self.cnum}:PAR{tnum}:DATA:SDATA?', complex_values=True) for tnum in range(1, self.ntraces + 1)]
+            sdata = [self.query_values(f':CALC{self.cnum}:PAR{tnum}:DATA:SDATA?', complex_values=True)
+                     for tnum in range(1, self.ntraces + 1)]
             self.parent.query_format = orig_query_fmt
             self.traces = orig_traces
             self.parent.check_errors()
