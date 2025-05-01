@@ -177,6 +177,5 @@ Here's an example of using a validator:
     # example, the string '100000' to the int 100_000
     _ = instr.ch1.freq_start
 """
-
-from .vna import VNA, Channel, ValuesFormat  # isort: skip
-from . import keysight, nanovna, rohde_schwarz, hp  # isort: skip
+from .vna import VNA, Channel, ValuesFormat # isort: skip
+from . import keysight, nanovna, anritsu # isort: skip
